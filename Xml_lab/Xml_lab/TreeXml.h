@@ -10,6 +10,7 @@
 #include "Node.h"
 
 
+//a class that implements all functions with a tree and has a public constructor
 class TreeXml
 {
 private:
@@ -24,17 +25,15 @@ public:
     Iterator begin();
     Iterator end();
 
-    void insert(std::string name, std::string value, int level); //the function of inserting a node into a tree
+    void insert(std::string name, std::string value, int level); //the function adds a node to the tree at the moment when we are working with the file
 
-    void traversal(); //traversing the tree for printing to call outside the class (so as not to make root_ public)
-    void traversal_tree_print(std::shared_ptr <Node> root);  //traversing the tree to print it
+    void traversal_print(); //traversing the tree for printing
 
-    void traversal_save(std::ofstream& out);  //traversing the tree to save the tree to a file, to call outside the class
-    void traversal_tree_save(std::shared_ptr <Node> root, std::ofstream& out);  //traversing the tree to save the tree to a file
+    void traversal_save(std::ofstream& out);  //traversing the tree to save the tree to a file
 
-    void Tolist();  //the function of converting a tree into a list
+    void add_list(std::shared_ptr <Node> root);  //function of adding a node to the list of tree nodes
 
-    void toList(std::shared_ptr <Node> root);  //the function of converting a tree to a list outside the class
+    void clear_list();  //function for clearing the list of nodes
 
     Iterator find(const std::string& name);   //search for a node by tag
 
@@ -42,7 +41,7 @@ public:
 
     bool erase(Iterator node);  //removing a node from an xml-tree
 
-    void deletenode(std::shared_ptr <Node> root);  //the function of deleting tree nodes
+    void deletenode(std::shared_ptr <Node>& root);  //the function of deleting tree nodes
 
     void delete_();  //the function of deleting tree nodes outside the class
 

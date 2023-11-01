@@ -11,12 +11,14 @@ int main()
     std::cout << "print:" << std::endl;
     xml->print();
 
-    xml->add("Child2", "Child4", "14");
-    xml->add("Child4", "Child5", "25");
+    auto it = xml->find("Child1");
+
+    auto it_add = xml->add(it, "Child4", "14");
+    xml->add(it_add, "Child5", "25");
     std::cout << "add:" << std::endl;
     xml->print();
 
-    xml->erase("Child4");
+    xml->erase(it_add);
     std::cout << "erase:" << std::endl;
     xml->print();
     xml->save(pathout);

@@ -15,14 +15,16 @@ TreeXml::Iterator TreeXml::end()
     return tree_in_list.end();
 }
 
-void TreeXml::insert(std::string name, std::string value, int level)
+void TreeXml::insert(std::string name, std::string value, int level)  //the function adds a node to the tree at the moment when we are working with the file and we do not need to know the iterator for the parent of this node
 {
     std::shared_ptr <Node> ptr = std::make_shared<Node>(name, value, level);
 
+    //at the time of adding the node, there was no root node in the tree
     if (root_->name == "")
     {
-        (*ptr).setParent(std::make_shared<Node>("", "", -1));
+        (*ptr).setParent(std::make_shared<Node>("", "", -1));  //setting the parent node
         root_ = ptr;
+        add_list(ptr);  //adding a node to the list of tree nodes
         return;
     }
 
@@ -35,73 +37,69 @@ void TreeXml::insert(std::string name, std::string value, int level)
     (*ptr_par).addChild(ptr);  //adding a child node to the parent
 
     (*ptr).setParent(ptr_par);  //setting the parent node
+
+    add_list(ptr);  //adding a node to the list of tree nodes
 }
 
 
+//the function of saving the tree to a file
 void TreeXml::traversal_save(std::ofstream& out)
 {
-    this->traversal_tree_save(this->root_, out);
-}
-
-void TreeXml::traversal_tree_save(std::shared_ptr <Node> root, std::ofstream& out)
-{
-    std::vector<std::shared_ptr<Node>> nodes = root->children;
-    out << std::string(root->level, ' ') << '<' + root->name + '>' << " value=" << root->value << std::endl;
-    for (int i = 0; i < nodes.size(); ++i)
+    //the function of printing open tags and attributes
+    std::function<void(std::shared_ptr<Node>&)> open_tag = [&out](std::shared_ptr<Node>& node)
     {
-        if (nodes[i]->children.size() > 0)
-            traversal_tree_save(nodes[i], out);
-        else
-        {
-            out << std::string(nodes[i]->level, ' ') << '<' + nodes[i]->name + '>' << " value=" << nodes[i]->value << std::endl;
-            out << std::string(nodes[i]->level, ' ') << "<\\" + nodes[i]->name + '>' << std::endl;
-        }
-    }
-    out << std::string(root->level, ' ') << "<\\" + root->name + '>' << std::endl;
-}
+        out << std::string(node->level, ' ') << '<' + node->name + '>' << " value=" << node->value << std::endl;
+    };
 
-void TreeXml::traversal()
-{
-    this->traversal_tree_print(this->root_);
-}
-
-void TreeXml::traversal_tree_print(std::shared_ptr <Node> root)
-{
-
-    std::vector<std::shared_ptr<Node>> nodes = root->children;
-    std::cout << std::string(root->level, ' ') << root->name << " value=" << root->value << std::endl;
-    for (int i = 0; i < nodes.size(); ++i)
+    //the function of printing closed tags
+    std::function<void(std::shared_ptr<Node>&)> close_tag = [&out](std::shared_ptr<Node>& node)
     {
-        if (nodes[i]->children.size() > 0)
-            traversal_tree_print(nodes[i]);
-        else
-        {
-            std::cout << std::string(nodes[i]->level, ' ') << nodes[i]->name << " value=" << nodes[i]->value << std::endl;
-        }
+        out << std::string(node->level, ' ') << "<\\" + node->name + '>' << std::endl;
+    };
+
+    //we check if our list of nodes is empty
+    if (tree_in_list.empty())
+    {
+        throw "error in save";
+    }
+    std::shared_ptr<Node> root = (*(this->begin()));  //we take the first node from the list of all nodes of the tree
+    (*root).for_each_save(open_tag, close_tag, root);
+}
+
+//the function of printing a tree in the console
+void TreeXml::traversal_print()
+{
+    //the function of printing open tags and attributes
+    std::function<void(std::shared_ptr<Node>&)> open_tag_print = [](std::shared_ptr<Node>& node)
+    {
+        std::cout << std::string(node->level, ' ') << '<' + node->name + '>' << " value=" << node->value << std::endl;
+    };
+
+    //we check if our list of nodes is empty
+    if (tree_in_list.empty())
+    {
+        throw "error in print";
+    }
+
+    //we apply the lambda function to each node of the node list
+    Iterator it = this->begin();
+    while (it != this->end())
+    {
+        open_tag_print((*it));
+        it++;
     }
 }
 
-void TreeXml::Tolist()  //the function of converting a tree into a list
+void TreeXml::add_list(std::shared_ptr <Node> root)
+{
+    tree_in_list.push_back(root);
+}
+
+void TreeXml::clear_list()
 {
     if (!tree_in_list.empty())
     {
         tree_in_list.clear();
-    }
-    this->toList(this->root_);
-}
-
-void TreeXml::toList(std::shared_ptr <Node> root)
-{
-    std::vector<std::shared_ptr<Node>> nodes = root->children;
-    tree_in_list.push_back(root);
-    for (int i = 0; i < nodes.size(); ++i)
-    {
-        if (nodes[i]->children.size() > 0)
-            toList(nodes[i]);
-        else
-        {
-            tree_in_list.push_back(nodes[i]);
-        }
     }
 }
 
@@ -127,6 +125,7 @@ TreeXml::Iterator TreeXml::add(Iterator parent, std::string name, std::string va
         std::shared_ptr <Node> new_node = std::make_shared<Node>(name, value, (*parent)->level + 1);
         (*parent)->addChild(new_node);
         (*new_node).setParent((*parent));
+
         //we are looking for a parent in the tree list, after which we will insert a new node
         Iterator findIter = std::find(this->begin(), this->end(), (*parent));
         AddIter = tree_in_list.insert(++findIter, new_node);
@@ -144,13 +143,13 @@ bool TreeXml::erase(Iterator node)
     try
     {
         std::shared_ptr<Node> parent = (*node)->parent.lock();
-        std::vector<std::shared_ptr<Node>> children = (*node)->children;
 
+        //removing a node from the tree
         (*node)->addChildren(parent);  //adding children to the parent of the node being deleted
         (*node)->setParent_for_children(parent);  //we install a new parent for the children of the node being deleted
         (*parent).DeleteChild((*node));  //removing a node from the parent node vector
 
-        tree_in_list.erase(node);
+        tree_in_list.erase(node);  //removing a node from the list of tree nodes
         return true;
     }
     catch (...)
@@ -161,40 +160,32 @@ bool TreeXml::erase(Iterator node)
 
 }
 
-void TreeXml::deletenode(std::shared_ptr <Node> root)
+//deleting all nodes of the tree
+void TreeXml::deletenode(std::shared_ptr <Node>& root)
 {
+    if (root == nullptr) return; //if the tree has already been deleted, then you do not need to delete it again
     if (root->name == "") return;
-    if (root->children.size() == 0)
+    for (auto& child : root->children)
     {
-        return;
+        deletenode(child);
     }
-
-    for (int i = 0; i < root->children.size(); i++)
-    {
-        std::shared_ptr <Node> child = root->children[i];
-        if (child->children.size() == 0)
-        {
-            for (int j = i; j < root->children.size() - 1; j++)
-            {
-                root->children[j] = root->children[j + 1];
-            }
-            root->children.pop_back();
-            i--;
-        }
-    }
-    for (int i = 0; i < root->children.size(); i++)
-    {
-        deletenode(root->children[i]);
-    }
-    return;
+    root.reset();  //resetting the smart pointer
 }
+
 
 void TreeXml::delete_()
 {
-    this->deletenode(this->root_);
+    try
+    {
+        this->deletenode(this->root_);
+    }
+    catch (...)
+    {
+        std::cout << "Error in delete node tree" << std::endl;
+    }
 }
 
 TreeXml::~TreeXml()
 {
-    tree_in_list.clear();
+    clear_list();
 }
