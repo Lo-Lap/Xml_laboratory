@@ -117,6 +117,8 @@ TreeXml::Iterator TreeXml::find(const std::string& name)
     return iter;
 }
 
+//adding a node to the tree by iterator per parent
+//In this function, it is necessary to know the iterator on the parent of the node being added
 TreeXml::Iterator TreeXml::add(Iterator parent, std::string name, std::string value)
 {
     Iterator AddIter;

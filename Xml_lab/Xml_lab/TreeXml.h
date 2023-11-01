@@ -37,7 +37,7 @@ public:
 
     Iterator find(const std::string& name);   //search for a node by tag
 
-    Iterator add(Iterator parent, std::string name, std::string value);  //adding a new node to the xml-tree
+    Iterator add(Iterator parent, std::string name, std::string value);  //adding a new node to the xml-tree (adding a node to the tree by iterator per parent)
 
     bool erase(Iterator node);  //removing a node from an xml-tree
 
